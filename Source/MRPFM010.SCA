@@ -1,0 +1,2166 @@
+SCCTEXT Version 4.0.0.2
+PLATFORM C(8,0),UNIQUEID C(10,0),TIMESTAMP N(10,0),CLASS M(4,0),CLASSLOC M(4,0),BASECLASS M(4,0),OBJNAME M(4,0),PARENT M(4,0),PROPERTIES M(4,0),PROTECTED M(4,0),METHODS M(4,0),OBJCODE M(4,0),OLE M(4,0),OLE2 M(4,0),RESERVED1 M(4,0),RESERVED2 M(4,0),RESERVED3 M(4,0),RESERVED4 M(4,0),RESERVED5 M(4,0),RESERVED6 M(4,0),RESERVED7 M(4,0),RESERVED8 M(4,0),USER M(4,0)
+1252
+
+[ RECORD]
+[PLATFORM] COMMENT 
+[UNIQUEID] Screen    
+[START RESERVED1]
+VERSION =   3.00[END RESERVED1]
+[START RESERVED8]
+language.h[END RESERVED8]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RNW11HPM3
+[CLASS] dataenvironment
+[BASECLASS] dataenvironment
+[OBJNAME] Dataenvironment
+[START PROPERTIES]
+Left = 4
+Top = 291
+Width = 670
+Height = 182
+Name = "Dataenvironment"
+[END PROPERTIES]
+[START RESERVED2]
+1[END RESERVED2]
+[START RESERVED4]
+1[END RESERVED4]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RF012JCGV
+[CLASS] form
+[BASECLASS] form
+[OBJNAME] frmSection_Mst
+[START PROPERTIES]
+DataSession = 1
+ScaleMode = 3
+Height = 358
+Width = 744
+DoCreate = .T.
+ShowTips = .T.
+AutoCenter = .T.
+BorderStyle = 2
+Caption = "[MRPFM010] Material Requirement Planning"
+ControlBox = .F.
+Closable = .F.
+MaxButton = .F.
+MinButton = .F.
+Movable = .F.
+MinHeight = -1
+MinWidth = -1
+MaxTop = -1
+MaxLeft = -1
+WindowType = 1
+WindowState = 0
+LockScreen = .F.
+mode = 
+Name = "frmSection_Mst"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE setmode
+LPARAMETERS mmodetype
+WITH THISFORM
+	IF (mmodetype='1')			&&		Called when Add/Edit/Delete is pressed
+		*	Enable Esc as Revert Button
+		*on key label esc
+		
+		ON KEY LABEL ESC _SCREEN.ACTIVEFORM.Setmode('0')
+		*ON KEY LABEL ESC MRPFM010.Setmode('0')
+
+		*	Set Valid as False
+		.VALID=.F.
+
+		*	Change Caption of Operations Buttons & Display Mode
+		DO CASE
+			CASE .Mode='a'
+				.txtdMode.VALUE=defModeAdd
+				.cmdgOperations.cmdAddsavecon.CAPTION= defCmdSave_S   &&Save
+
+			CASE .Mode='e'
+				.txtdMode.VALUE=defModeEdit
+				.cmdgOperations.cmdAddsavecon.CAPTION= defCmdSave_S	  &&Save
+
+			CASE .Mode='d'
+				.cmdgOperations.cmdAddsavecon.CAPTION= defCmdConfirm_C  &&Confirm
+				.txtdMode.VALUE=defModeDelete
+		ENDCASE
+
+		.cmdgOperations.cmdEditrevert.CAPTION= defCmdRevert_V  &&Revert
+
+		*	Disable Operations Buttons
+		STORE .F. TO .cmdgOperations.cmdClose.ENABLED,.cmdgOperations.cmdDelete.ENABLED,;
+			.cmdgOperations.cmdPrint.ENABLED
+
+		*	Enable All Fields
+		.cboSection_C.ENABLED=.T.
+						
+		IF .Mode!='d'
+			STORE .T. TO .txtSection_nm.ENABLED,.txtPrefix.ENABLED, ;
+				.txtSection_Add1.ENABLED,.txtSection_Add2.ENABLED,.txtSection_Add3.ENABLED,;
+				.txtplant_code.ENABLED,.txtmat_rec_lt.ENABLED,.txtmat_Issue_lt.ENABLED,;
+				.txtmat_Insp_lt.ENABLED,.chkDoh1.ENABLED,.chkDoh2.ENABLED,;
+				.chkDoh3.ENABLED,.chkDoh4.ENABLED,.chkDoh5.ENABLED,.chkDoh6.ENABLED,;
+				.chkDoh7.ENABLED				
+		ENDIF
+		
+		*	Calling method to set RowSource of Combo
+		.GetSectionCodes()
+
+		*	Set the focus to first field
+		.cboSection_C.SETFOCUS
+
+	ELSE						&&		Called when Save/Confirm/Revert is pressed
+
+		*	Refresh the statusbar text of all the fields
+		APPLICATION.STATUSBAR = ''
+
+		*	Disable Esc as Revert Button
+		ON KEY LABEL ESC
+
+		*	Change Caption of Operations Buttons & Display Mode
+		.cmdgOperations.cmdAddsavecon.CAPTION= Defcmdadd_A	&&Add
+		.cmdgOperations.cmdEditrevert.CAPTION= Defcmdedit_E	 &&Edit
+
+		*	Enable Operations Buttons
+		STORE .T. TO .cmdgOperations.cmdDelete.ENABLED,.cmdgOperations.cmdPrint.ENABLED,;
+			.cmdgOperations.cmdClose.ENABLED
+
+		*	Set Mode's Value
+		STORE '' TO .Mode,.txtdMode.VALUE,.cboSection_C.DISPLAYVALUE,mP_Oldcodesec
+		.Refreshfrm
+
+		*	Disable All Fields
+		STORE .F. TO .cboSection_C.ENABLED,.txtSection_nm.ENABLED,.txtPrefix.ENABLED, ;
+				.txtSection_Add1.ENABLED,.txtSection_Add2.ENABLED,.txtSection_Add3.ENABLED,;
+				.txtplant_code.ENABLED,.txtmat_rec_lt.ENABLED,.txtmat_Issue_lt.ENABLED,;
+				.txtmat_Insp_lt.ENABLED,.chkDoh1.ENABLED,.chkDoh2.ENABLED,;
+				.chkDoh3.ENABLED,.chkDoh4.ENABLED,.chkDoh5.ENABLED,.chkDoh6.ENABLED,;
+				.chkDoh7.ENABLED
+		
+	ENDI
+ENDWITH
+
+ENDPROC
+PROCEDURE add
+*	Storing Values In Variables
+WITH THISFORM
+	mSection_c		=.cboSection_C.DISPLAYVALUE
+	mSection_nm		=.txtSection_nm.VALUE
+	mSection_add1	=.txtSection_Add1.VALUE
+	mSection_add2	=.txtSection_Add2.VALUE
+	mSection_add3	=.txtSection_Add3.VALUE
+	mPrefix			=.txtPrefix.VALUE
+	mplant_code		=.txtplant_code.VALUE
+	mMat_rec_lt     =.txtMat_rec_lt.VALUE
+	mMat_issue_lt   =.txtMat_issue_lt.VALUE
+	mMat_insp_lt    =.txtMat_insp_lt.VALUE
+	mCheck_num_max  =.txtCheck_num_max.VALUE
+	mDay_week_holiday = ALLTRIM(STR(.chkDoh1.VALUE))+ALLTRIM(STR(.chkDoh2.VALUE))+;
+						ALLTRIM(STR(.chkDoh3.VALUE))+ALLTRIM(STR(.chkDoh4.VALUE))+ALLTRIM(STR(.chkDoh5.VALUE))+;
+						ALLTRIM(STR(.chkDoh6.VALUE))+ALLTRIM(STR(.chkDoh7.VALUE))
+ENDWITH
+
+*	Performs Checks Specific To Add And Saves Record
+IF USED ('inseRvew')
+	DROP VIEW inseRvew
+ENDIF
+
+CREATE SQL VIEW inseRvew REMOTE CONNECTION CONNECT1 SHARED;
+	AS;
+	SELECT * FROM section_mst WHERE 1=2
+
+=DBSETPROP('inseRvew','VIEW','TABLE','Section_Mst')
+=DBSETPROP ('inseRvew.section_c','field','Updatable',.T.)
+=DBSETPROP('inseRvew','VIEW','Sendupdates',.T.)
+
+SELECT 22
+USE inseRvew
+mHandle=CURSORGETPROP("connecthandle","inseRvew")
+
+IF mHandle <= 0			&&Connection failed
+	mP_err[2]='E0202'
+	DO errtrap
+	RETU
+ELSE
+	BEGIN TRAN
+	INSERT INTO inseRvew ;
+		(section_c,section_nm,prefix,section_add1,section_add2,;
+		section_add3,plant_code,mat_rec_lt,mat_issue_lt,mat_insp_lt,;
+		check_num_max,Day_week_holiday,USERID,ent_dt,upd_dt) ;
+		VALUES(mSection_c,mSection_nm,mPrefix,mSection_add1,;
+		mSection_add2,mSection_add3,mplant_code,mMat_rec_lt,;
+		mMat_issue_lt,mMat_insp_lt,mCheck_num_max,mDay_week_holiday,;
+		mP_login,DATETIME(),DATETIME())
+
+*	04/10/2003
+*	INSERT Record in safety inventory Master
+
+*	If Safety inventory Base is Ratio then Safety Inventory Ratio should be 100 
+*	And If Safety inventory Base is Days then Safety Inventory Ratio should be 5 
+*	Offset count and applicable days is always 0.
+
+	IF mP_safetyinvt_base='R'			&& 'R'=Ratio,'D'='Days'
+		mSafe_ratio = '100'
+	ELSE
+		mSafe_ratio = '5'
+	ENDIF
+	
+&& tachi
+&& Supplier get
+	mcom="SELECT supplier_c FROM &mP_Ownername supplier_mst"
+
+	mP_ret=SQLEXEC(mP_handle,mcom,'suppCur')
+
+	IF mP_ret<0
+		=AERROR(mP_err)
+		DO Errtrap			&& Display Error Msg.
+		RETU
+	ENDIF
+
+	SELECT suppcur
+	mcom = ''			
+
+	DO WHILE !EOF()
+		mp_supplier_c=suppcur->supplier_c
+
+		mcom = mcom +  " INSERT &mP_ownername safetyinvt_mst(section_c,safetyinvt_base,safetyinvt_ratio,offset_cnt," + ;
+			" applicable_days,supplier_c,trml_nm,userid)" + ;
+			" VALUES('&mSection_c','&mP_safetyinvt_base',&mSafe_ratio,0,0,'&mp_supplier_c','&mP_trmlnm','&mP_Login')"	
+		skip	
+	ENDDO && tachi	
+	
+	*!*		mcom = "INSERT &mP_ownername safetyinvt_mst(section_c,safetyinvt_base,safetyinvt_ratio,offset_cnt," + ;
+	*!*			" applicable_days,trml_nm,userid)" + ;
+	*!*			" VALUES('&mSection_c','&mP_safetyinvt_base',&mSafe_ratio,0,0,'&mP_trmlnm','&mP_Login')"
+
+	mP_ret=SQLEXEC(mP_handle,mcom)
+
+	IF (mP_ret <= 0)
+		=AERROR(mP_err)
+		DO errtrap  			  && Checks Backend Error
+		SELECT 22
+		=TABLEREVERT(.T.)
+		SQLROLLBACK(mHandle)
+		END TRAN
+		RETURN
+	ELSE
+		SELECT 22
+		IF !TABLEUPDATE(.T.)
+			=AERROR(mP_err)
+			DO errtrap
+			SELECT 22
+			TABLEREVERT(.T.)
+			SQLROLLBACK(mHandle)
+			END TRAN
+			RETURN
+		ENDIF
+		SELECT 22
+		SQLCOMMIT(mHandle)
+		END TRAN
+	ENDIF
+		
+ENDIF 	&&Main IF/ENDIF
+
+*	Call SetMode for Refreshing
+THISFORM.SetMode('0')
+
+
+ENDPROC
+PROCEDURE edit
+* View Recreate to avoid conflict while update - SS2 10/18/2002
+IF USED ('getRvew')
+	DROP VIEW getRvew
+ENDIF
+
+STORE '' TO newvar
+newvar=THISFORM.cbosection_c.DISPLAYVALUE
+
+CREATE SQL VIEW getRvew REMOTE ;
+	CONNECTION CONNECT1 SHARED ;
+	AS;
+	SELECT * FROM section_mst ;
+	WHERE section_c=?newvar
+
+SET MULTILOCKS ON
+
+=DBSETPROP ('getRvew','VIEW','TABLE','Section_Mst')
+=DBSETPROP('getRvew','View','SendUpdates',.T.)
+=DBSETPROP('getRvew.Section_c','Field','Updatable',.T.)
+
+SELECT 23
+USE getRvew
+=CURSORSETPROP("Buffering",3,'getRvew')
+
+*	Performs Checks Specific To Edit And Saves Record
+mHandle=CURSORGETPROP("connecthandle","getRvew")
+
+IF mHandle <=0		&&Connection failed
+	mP_err[2]='E0202'
+	DO errtrap
+	RETU
+ELSE
+	SELECT 23
+	BEGIN TRAN
+	WITH THISFORM
+		REPLACE prefix			WITH .txtPrefix.VALUE,;
+			section_nm		WITH .txtSection_nm.VALUE, ;
+			section_add1	WITH .txtSection_Add1.VALUE, ;
+			section_add2 	WITH .txtSection_Add2.VALUE, ;
+			section_add3 	WITH .txtSection_Add3.VALUE, ;
+			plant_code	 	WITH .txtPlant_code.VALUE, ;
+			mat_rec_lt      WITH .txtMat_rec_lt.VALUE,;
+			mat_issue_lt    WITH .txtMat_issue_lt.VALUE,;
+			mat_insp_lt     WITH .txtMat_insp_lt.VALUE,;
+			check_num_max   WITH .txtCheck_num_max.VALUE,;
+			day_week_holiday WITH ALLTRIM(STR(.chkDoh1.VALUE))+ALLTRIM(STR(.chkDoh2.VALUE))+;
+						ALLTRIM(STR(.chkDoh3.VALUE))+ALLTRIM(STR(.chkDoh4.VALUE))+ALLTRIM(STR(.chkDoh5.VALUE))+;
+						ALLTRIM(STR(.chkDoh6.VALUE))+ALLTRIM(STR(.chkDoh7.VALUE)),;
+			USERID 			WITH mP_login,;
+			upd_dt 			WITH DATETIME()
+	ENDWITH
+	IF TABLEUPDATE(.T.)
+		SQLCOMMIT(mHandle)
+		END TRAN
+	ELSE
+		=AERROR(mP_err)
+		DO errtrap
+		SELECT 23
+		TABLEREVERT(.T.)
+		SQLROLLBACK(mHandle)
+		END TRAN
+		RETU
+	ENDIF
+ENDIF		&&Main IF/ENDIF
+
+*	Call SetMode for Refreshing
+THISFORM.SetMode('0')
+
+ENDPROC
+PROCEDURE delete
+*	Performs Checks Specific To Delete And Deletes Record
+msection_c	=	THISFORM.cboSection_c.DISPLAYVALUE
+
+mHandle=CURSORGETPROP("connecthandle","getRvew")
+mmHandle=CURSORGETPROP("connecthandle","delRvew")
+
+IF mHandle <= 0	OR mmHandle <=0	&&Connection failed
+	mP_err[2]='E0202'
+	DO errtrap
+	RETU
+ELSE
+	SELECT 28
+	BEGIN TRAN
+	DELE ALL
+	IF TABLEUPDATE(.T.)
+		SELECT 23
+		sele getRvew
+		go top
+		DELETE
+		IF TABLEUPDATE(.T.)
+			SQLCOMMIT(mmHandle)
+			SQLCOMMIT(mHandle)
+		ELSE
+			=AERROR(mP_err)
+			DO errtrap
+			SELECT 23
+			TABLEREVERT(.T.)
+			SELECT 28
+			TABLEREVERT(.T.)
+			RECALL ALL
+			SQLROLLBACK(mHandle)
+			SQLROLLBACK(mmHandle)
+		ENDI
+	END TRAN
+	ELSE
+		=AERROR(mP_err)
+		DO errtrap
+		SELECT 23
+		TABLEREVERT(.T.)
+		SELECT 28
+		TABLEREVERT(.T.)
+		SQLROLLBACK(mHandle)
+		SQLROLLBACK(mmHandle)
+		END TRAN
+		RETU
+	ENDIF
+ENDI  &&Main IF/ENDIF
+
+*	Call SetMode for Refreshing
+THISFORM.SetMode('0')
+
+
+ENDPROC
+PROCEDURE aedcheck
+*	Common Checks for Add, Edit & Delete
+WITH THISFORM
+
+	DO CASE
+		CASE LEN(ALLT(.cboSection_C.DISPLAYVALUE))= 0
+			mP_err[2]='E0001'
+			DO errtrap
+			.cboSection_C.SETFOCUS
+			RETU 0
+
+		CASE LEN(ALLT(.txtSection_nm.VALUE))= 0
+			mP_err[2]='E0001'
+			DO errtrap
+			.txtSection_nm.SETFOCUS
+			RETU 0
+
+		CASE LEN(ALLT(.txtPrefix.VALUE))= 0
+			mP_err[2]='E0001'
+			DO errtrap
+			.txtPrefix.SETFOCUS
+			RETU 0
+
+*!*			CASE LEN(ALLT(.txtPlant_code.VALUE))< 3
+		CASE LEN(ALLT(.txtPlant_code.VALUE)) = 0
+			mP_err[2]=IIF(LEN(ALLT(.txtPlant_code.VALUE))=0,'E0001','E0011')
+			DO errtrap
+			.txtPlant_code.SETFOCUS
+			RETU 0
+
+		CASE LEN(ALLT(.txtSection_Add1.VALUE))= 0
+			mP_err[2]='E0001'
+			DO errtrap
+			.txtSection_Add1.SETFOCUS
+			RETU 0
+			
+		CASE .txtMat_rec_lt.VALUE < 0 OR .txtMat_rec_lt.VALUE > 255			
+			mp_err[2]='E0007'
+			DO errtrap
+			.txtMat_rec_lt.SETFOCUS
+			RETU 0
+			
+		CASE .txtMat_issue_lt.VALUE < 0 OR .txtMat_issue_lt.VALUE > 255			
+			mp_err[2]='E0007'
+			DO errtrap
+			.txtMat_issue_lt.SETFOCUS
+			RETU 0
+			
+		CASE .txtMat_insp_lt.VALUE < 0 OR .txtMat_insp_lt.VALUE > 255			
+			mp_err[2]='E0007'
+			DO errtrap
+			.txtMat_insp_lt.SETFOCUS
+			RETU 0
+				
+		CASE .chkDOH1.VALUE =1 AND .chkDOH2.VALUE =1 AND .chkDOH3.VALUE =1 AND;
+			.chkDOH4.VALUE =1 AND .chkDOH5.VALUE =1 AND .chkDOH6.VALUE =1 AND;
+			.chkDOH7.VALUE =1 
+			mP_err[2]= 'E0369'			
+			DO Errtrap
+			.chkDOH1.SETFOCUS
+			RETU 0		
+
+	ENDCASE
+
+*	If Sucessful Set This To True
+	.VALID=.T.
+ENDWITH
+
+ENDPROC
+PROCEDURE clicked
+* 	Processing Of Command Button Click
+KEYBOARD CHR(255)
+INKEY()
+STORE 0 TO mP_Xcor,mP_Ycor,mP_Xcor1,mP_Ycor1
+WITH THISFORM
+
+	DO CASE		&& Main DO CASE
+
+			** 1
+		CASE .cmdgOperations.VALUE=1	&& Add/Save/Confirm
+			DO CASE		&& Sub DO CASE
+				CASE ALLTRIM(.Mode)=''		&& Add
+					.Mode='a'
+					*.txtCheck_num_max.VALUE = mP_Check_num_max
+					.SetMode('1')
+
+				CASE .Mode='a'		&& Save for Add
+					*	Perform General Checks
+					.Aedcheck
+					IF .VALID
+						*	Perform Checks Specific to Add and Save Record
+						.ADD
+					ENDIF
+
+				CASE .Mode='e'		&& Save For Edit
+					*	Perform General Checks
+					.Aedcheck
+
+					IF .VALID
+						*	Perform Checks Specific to Edit and Save Record
+						.EDIT
+					ENDIF
+
+				CASE .Mode='d'		&& Confirm For Delete
+					*	Perform General Checks
+					.VALID=.T.
+					IF .VALID
+						*	Perform Checks Specific to Delete and Delete Record
+						.DELETE
+					ENDIF
+			ENDCASE		&& Sub DO CASE/ENDCASE
+
+			** 2
+		CASE .cmdgOperations.VALUE=2	&& Edit/Revert
+			DO CASE		&&Sub DO CASE
+				CASE ALLTRIM(.Mode)=''		&& Edit
+					.Mode='e'
+
+					.SetMode('1')
+				OTHERWISE					&& Revert					
+					.SetMode('0')
+			ENDCASE	&&Sub DO CASE/ENDCASE
+			
+
+			** 3
+		CASE .cmdgOperations.VALUE=3	&& Delete
+			.Mode='d'
+			.SetMode('1')
+
+			** 4
+		CASE .cmdgOperations.VALUE=4	&& Print
+			*	Call User Defined Print Procedure
+			.txtdMode.VALUE=defModePrint
+			.RepPrint
+			.txtdMode.VALUE=""
+			.cmdgOperations.cmdAddsavecon.SETFOCUS
+
+			** 5
+		CASE .cmdgOperations.VALUE=5	&& Close
+			*	Release The Form
+			.RELEASE
+	ENDCASE		&& Main DO CASE/ENDCASE
+ENDWITH
+
+ENDPROC
+PROCEDURE getsectioncodes
+*	Common Function to get section codes and set row source
+
+WITH THISFORM
+		
+	SELECT I	
+	REQUERY('sectRvew')	
+	.cboSection_C.ROWSOURCE="sectRvew"		
+	
+	mRet = def_section('sectRvew')	
+	IF mRet = .T.
+		IF .Mode <> 'a'			
+			.cboSection_c.DISPLAYVALUE = sectRvew->section_c			
+			.cboSection_c.VALID		
+		ENDIF	
+	ENDIF
+	
+ENDWITH
+
+ENDPROC
+PROCEDURE refreshfrm
+*	Refresh the values of all the fields
+
+WITH THISFORM
+	STORE '' TO .txtSection_nm.VALUE,.txtPrefix.VALUE,.txtSection_Add1.VALUE,;
+	.txtSection_Add2.VALUE,.txtSection_Add3.VALUE,.txtplant_code.VALUE
+	
+	STORE 0 TO .txtmat_rec_lt.VALUE,.txtmat_Issue_lt.VALUE,;
+	.txtmat_Insp_lt.VALUE,.txtcheck_num_max.VALUE
+		
+	STORE 0 TO .chkDoh1.VALUE,.chkDoh2.VALUE,.chkDoh3.VALUE,.chkDoh4.VALUE,;
+	.chkDoh5.VALUE,.chkDoh6.VALUE,.chkDoh7.VALUE
+	
+ENDWITH
+
+ENDPROC
+PROCEDURE repprint
+*	Printing Report
+*	Making Cursor For The Master Listing
+CUR='repCur'
+
+SELECT * FROM sectrVew WHERE 1=2 INTO CURSOR &Cur
+
+mP_ret=SQLEXEC(mP_handle,"SELECT section_c=section_c+Space(3)+'('+prefix+')',"+;
+	" section_nm,plant_code,section_add1,section_add2,section_add3, "+;
+	" mat_rec_lt,mat_issue_lt,mat_insp_lt,check_num_max, "+;
+	" day_week_holiday FROM &mP_Ownername Section_Mst  "+;
+	"  ORDER BY a.section_c",CUR)
+
+IF mP_ret<0
+	=AERROR(mP_err)
+	DO errtrap
+	RETU
+ENDI
+
+*	Calculating total pages for the report
+thisform.lang_change(2)
+STORE 1 TO _PAGENO,mP_totalpages
+SELE &CUR
+REPO FORM MRPFM010.FRX NOCONSOLE
+mP_totalpages=_PAGENO
+
+REP			= "MRPFM010.FRX"
+FRM			= "MRPFM010"
+ECUR 		= "xlCur"
+EFILENAME	= "Section_Mst.xls"
+EFILEPATH	= ''
+
+*	Making Cursor For Excel File output
+mcom = 	"SELECT * FROM &mP_Ownername section_mst "+;
+		" ORDER BY section_c"
+
+mP_ret = SQLEXEC(mP_handle, mcom, ECUR)
+
+IF mP_ret<0
+	=AERROR(mP_err)
+	DO errtrap
+	RETU
+ENDI
+
+DO FORM PRINT_E WITH REP,CUR,FRM,ECUR,EFILENAME,EFILEPATH
+
+THISFORM.lang_change(0)		&& Release all public variables used for report
+
+*	Clear Text
+APPLICATION.STATUSBAR=''
+ENDPROC
+PROCEDURE lang_change
+LPARAMETER lmode
+WITH THISFORM
+	DO CASE
+		CASE lmode = 1
+			.label2.CAPTION =  defm010heading
+			.label1.CAPTION =  defsection_code
+			.label3.CAPTION =  defname
+			.label5.CAPTION =  defplant_code
+			.label4.CAPTION	=  defshort_code
+			.label8.CAPTION =  defaddress_one
+			.label9.CAPTION =  defaddress_two
+			.label10.CAPTION = defaddress_three
+			.label6.CAPTION  = defMaterial_Rec_LT
+			.label7.CAPTION  = defMaterial_Issue_LT
+			.label11.CAPTION = defMaterial_Insp_LT
+			.label12.CAPTION = defMPS_Backup_Term
+			.label13.CAPTION = defDay_of_holiday
+
+			.chkDoh1.CAPTION = defSun
+			.chkDoh2.CAPTION = defMon
+			.chkDoh3.CAPTION = defTue
+			.chkDoh4.CAPTION = defWed
+			.chkDoh5.CAPTION = defThu
+			.chkDoh6.CAPTION = defFri
+			.chkDoh7.CAPTION = defSat
+			
+			WITH .cmdgoperations
+				.cmdaddsavecon.CAPTION = defcmdadd_a
+				.cmddelete.CAPTION 	   = defcmddelete_d
+				.cmdprint.CAPTION      = defcmdprint_p
+				.cmdeditrevert.CAPTION = defcmdedit_e
+				.cmdclose.CAPTION = defcmdclose_c
+			ENDW
+			.command1.TOOLTIPTEXT = defhelp
+
+
+		CASE lmode = 2
+			PUBLIC mpr_program,mpr_section_master,mpr_time,mpr_page,mpr_section_code,mpr_section_name,;
+				mpr_end_of_report,mpr_date,mpr_prefix,mpr_address,mpr_plant_code,;
+				mPr_mat_rec_lt,mPr_mat_iss_lt,mPr_mat_insp_lt,mPr_MPS_Backup_Term,mP_holiday,mPr_day_of_holiday
+
+			mpr_program = defprogram
+			mpr_section_master = defSECTION_MASTER
+			mpr_time = deftime
+			mpr_date = defdate
+			mpr_page = defpage
+			mpr_section_code = defsection_code
+			mpr_section_name = defsection_name
+			mpr_address= defaddress
+			mpr_prefix = defprefix
+			mpr_end_of_report = defend_of_report
+			mpr_plant_code = defplant_code
+			mPr_mat_rec_lt = defMaterial_Rec_LT
+			mPr_mat_iss_lt = defMaterial_Issue_LT
+			mPr_mat_insp_lt = defMaterial_Insp_LT
+			mPr_MPS_Backup_Term =defMPS_Backup_Term
+			mPr_day_of_holiday = defDay_of_holiday
+			mP_holiday = THIS
+
+		CASE lmode = 0
+
+			RELE mpr_program,mpr_section_master,mpr_time,mpr_page,mpr_section_code,mpr_section_name,;
+				mpr_end_of_report,mpr_date,mpr_prefix,mpr_address,mpr_plant_code,;
+				mPr_mat_rec_lt,mPr_mat_iss_lt,mPr_mat_insp_lt,mPr_MPS_Backup_Term,mP_holiday,mPr_day_of_holiday
+
+	ENDC
+ENDW
+
+
+ENDPROC
+PROCEDURE getday
+LPARAMETERS mRef
+
+WITH THISFORM
+	RETURN (ALLT(IIF( INT(VAL(SUBSTR(mRef,1,1)))=1,ALLTRIM(.chkDoh1.CAPTION)+' ' ,'')+  ;
+		IIF(INT(VAL(SUBSTR(mRef,2,1)))=1,ALLTRIM(.chkDoh2.CAPTION)+' ','')+ ;
+		IIF(INT(VAL(SUBSTR(mRef,3,1)))=1,ALLTRIM(.chkDoh3.CAPTION)+' ','')+ ;
+		IIF(INT(VAL(SUBSTR(mRef,4,1)))=1,ALLTRIM(.chkDoh4.CAPTION)+' ','')+ ;
+		IIF(INT(VAL(SUBSTR(mRef,5,1)))=1,ALLTRIM(.chkDoh5.CAPTION)+' ','')+ ;
+		IIF(INT(VAL(SUBSTR(mRef,6,1)))=1,ALLTRIM(.chkDoh6.CAPTION)+' ','')+ ;
+		IIF(INT(VAL(SUBSTR(mRef,7,1)))=1,ALLTRIM(.chkDoh7.CAPTION),'')))
+ENDWITH
+
+
+ENDPROC
+PROCEDURE Init
+*********************************************************************************************
+*	mrpfm010			Section Master Maintenance
+*	IG
+*	Date 				11/17/1997
+*	Modified			07/14/1999		New Field - Prefix  							NR
+*						06/02/2000		No link with ACSSDB 							NR
+*						10/09/2000		New Field - Prefix1 for Invoice No.  			PKY
+*						11/29/2001		For multilanguage Changings.  					SS2
+*	Modified			05/31/2002		DHS-MCS Standardization							KS
+*										Removed sws_code, demand_to, safety_od, 
+*										prefix1 from FE/BE
+*	Modified			06/12/2002		New Field - Plant Code							VS
+*	Modified			07/23/2002		Support to multiple date format		    		RS 
+*	Modified			10/07/2002		Specification No. D2-036
+*										(Add Default Section and Search Combo)			RS
+*	Modified 			10/18/2002		Avoid conflict while update 					SS2 
+*	Modified 			04/10/2003		Insert rec in Safety Invt Master 				PKY
+*	Modified			06/24/2003		Fix for Buttons to work in exe properly			SWS
+*	Modified			07/09/2003 		Added Output to Excel functionality				SA
+* 	Modified			07/28/2003 		New Fields mat_rec_lt,mat_issue_lt,
+*										mat_insp_lt,check_num_max and
+*										day_week_holiday will be added 
+*										on form & report								RS
+* 	Modified			08/28/2003 		When edit or delete mode, Display 
+*										"MPS Data Backup Term" from Section Master 		PKY	
+*	Modified			09/02/2003		Change Section Name length from 40 to 60 chrs.	SA
+*										(Merging SEWT changes in Form and Report)
+*********************************************************************************************
+*	Declare Public Variables Necessary for Print In Init & Release On Unload
+PUBLIC mP_Oldcodesect,mP_check_num_max
+
+*	Initializations
+KEYBOARD CHR(255)
+INKEY()
+STORE 0 TO mP_Xcor,mP_Ycor,mP_Xcor1,mP_Ycor1
+
+mP_check_num_max=15	&&	Fixed Value 15 for MPS Data Backup Term
+
+THISFORM.lang_change(1) &&Used to change the captions of labels
+mP_Oldcodesect ='~'
+THISFORM.getSectioncodes
+
+*	Call SetMode for Refreshing
+THISFORM.SetMode('0')
+
+
+ENDPROC
+PROCEDURE Unload
+*	Release All Public Variables
+RELEASE mP_Oldcodesect,mP_check_num_max
+
+THISFORM.lang_change(0)		&& Release all public variables used for reprot
+* Closing Views
+IF USED ('inseRvew')
+	USE IN inseRvew
+ENDI
+
+IF USED ('getRvew')
+	USE IN getRvew
+ENDI
+
+IF USED ('delRvew')
+	USE IN delRvew
+ENDI
+
+
+ENDPROC
+[END METHODS]
+[START RESERVED3]
+mode
+valid Occurs before a control loses the focus.
+*setmode 
+*add 
+*edit 
+*delete Delete Event.
+*aedcheck 
+*clicked 
+*getsectioncodes 
+*refreshfrm 
+*repprint 
+*lang_change 
+*getday 
+[END RESERVED3]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RF012OCMQ
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label2
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+AutoSize = .F.
+FontBold = .T.
+FontName = "Times New Roman"
+FontSize = 18
+BackStyle = 0
+Caption = " Section Master Maintenance         "
+Height = 29
+Left = 20
+Top = 2
+Width = 508
+TabIndex = 20
+ForeColor = 0,0,0
+Name = "Label2"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RF0130L3V
+[CLASS] commandgroup
+[BASECLASS] commandgroup
+[OBJNAME] cmdgoperations
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+ButtonCount = 5
+BackStyle = 0
+Value = 0
+Height = 48
+Left = 25
+Top = 300
+Width = 697
+TabIndex = 19
+BackColor = 255,0,0
+BorderColor = 255,0,0
+Name = "cmdgoperations"
+Command1.Top = 12
+Command1.Left = 35
+Command1.Height = 24
+Command1.Width = 55
+Command1.FontSize = 8
+Command1.Caption = "\<Add"
+Command1.Enabled = .T.
+Command1.TabIndex = 1
+Command1.Name = "cmdAddsavecon"
+Command2.Top = 12
+Command2.Left = 90
+Command2.Height = 24
+Command2.Width = 55
+Command2.FontSize = 8
+Command2.Caption = "\<Edit"
+Command2.TabIndex = 2
+Command2.Name = "cmdEditrevert"
+Command3.Top = 12
+Command3.Left = 145
+Command3.Height = 24
+Command3.Width = 55
+Command3.FontSize = 8
+Command3.Caption = "\<Delete"
+Command3.TabIndex = 3
+Command3.Name = "cmdDelete"
+Command4.Top = 12
+Command4.Left = 200
+Command4.Height = 24
+Command4.Width = 55
+Command4.FontSize = 8
+Command4.Caption = "\<Print"
+Command4.Enabled = .T.
+Command4.TabIndex = 4
+Command4.Name = "cmdPrint"
+Command5.Top = 12
+Command5.Left = 603
+Command5.Height = 24
+Command5.Width = 55
+Command5.FontSize = 8
+Command5.Cancel = .T.
+Command5.Caption = "\<Close"
+Command5.TabIndex = 5
+Command5.Name = "cmdClose"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE MouseMove
+LPARAMETERS nButton, nShift, nXCoord, nYCoord
+mP_xcor=nXCoord
+mP_ycor=nYCoord
+mP_xcor1=nXCoord
+mP_ycor1=nYCoord
+
+ENDPROC
+PROCEDURE cmdAddsavecon.Click
+THISFORM.Clicked
+ENDPROC
+PROCEDURE cmdEditrevert.MouseMove
+LPARAMETERS nButton, nShift, nXCoord, nYCoord
+mP_Xcor1=nXCoord
+mP_Ycor1=nYCoord
+
+ENDPROC
+PROCEDURE cmdEditrevert.Click
+THISFORM.Clicked
+ENDPROC
+PROCEDURE cmdDelete.Click
+THISFORM.Clicked
+ENDPROC
+PROCEDURE cmdPrint.Click
+THISFORM.Clicked
+ENDPROC
+PROCEDURE cmdClose.Click
+THISFORM.Clicked
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RFA0T0TWZ
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtdDate
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontBold = .T.
+FontName = "Arial"
+FontSize = 8
+Alignment = 2
+Value = (date())
+ControlSource = ""
+Enabled = .F.
+Height = 24
+InputMask = ""
+Left = 649
+ReadOnly = .T.
+SpecialEffect = 0
+TabIndex = 21
+TabStop = .F.
+Top = 0
+Width = 72
+ForeColor = 255,255,255
+DisabledForeColor = 0,0,0
+Name = "txtdDate"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RGH13P8QM
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtdMode
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontBold = .T.
+FontSize = 8
+Alignment = 2
+Enabled = .F.
+Height = 24
+Left = 324
+ReadOnly = .T.
+TabIndex = 22
+Top = 313
+Width = 72
+DisabledForeColor = 0,0,0
+Name = "txtdMode"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RLF0RGXYX
+[CLASS] combobox
+[BASECLASS] combobox
+[OBJNAME] cboSection_c
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+ColumnCount = 2
+ColumnWidths = "70,460"
+RowSourceType = 2
+Enabled = .F.
+Height = 24
+Left = 169
+TabIndex = 1
+Top = 49
+Width = 73
+ForeColor = 255,255,255
+BackColor = 64,128,128
+Format = "!"
+InputMask = "XXXX"
+Name = "cboSection_c"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE KeyPress
+LPARAMETERS nKeyCode, nShiftAltCtrl
+LOCAL lcReturnValue , lcCaption , lnListBoxWidth , lcFirstColumnWidth
+lcReturnValue	= ""
+lcCaption		= THISFORM.Label1.CAPTION
+lnListBoxWidth	= 469
+lcFirstColumnWidth = '45'
+
+IF nKeyCode = -4
+	IF !EMPTY(THIS.ROWSOURCE) AND RECCOUNT(THIS.ROWSOURCE) > 0
+		DO FORM SEARCH.SCX WITH THIS, lcCaption, lnListBoxWidth, lcFirstColumnWidth TO lcReturnValue NAME oSearch NOSHOW
+		oSearch.AUTOCENTER = .T.
+		oSearch.SHOW()
+		
+		IF LEN(ALLTRIM(lcReturnValue))!=0
+			THIS.VALUE = lcReturnValue
+			THIS.VALID()
+		ENDIF
+		RELE oSearch
+		ON KEY LABEL ESC _SCREEN.ACTIVEFORM.SetMode('0')
+	ENDIF
+	NODEFAULT
+	KEYBOARD CHR(255)
+	INKEY()
+ENDIF
+
+ENDPROC
+PROCEDURE Valid
+*	If Last key pressed was UP OR LEFT Arrow then don't do validations
+IF LASTKEY() = 5 OR LASTKEY() = 19 OR  LASTKEY() = 127
+	KEYBOARD '{13}'
+	RETU 0
+ENDI
+
+* If F5 Pressed return
+
+IF LASTKEY()= -4
+	RETURN 0
+ENDIF
+
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+*	Trapping the mousemoves
+IF MDOWN() AND (mP_Xcor<>mP_Xcor1)AND (mP_Ycor<>mP_Ycor1)
+	RETU
+ENDI
+
+*	Check for Blank Code
+IF  LEN(ALLT(THIS.DISPLAYVALUE))<4
+	THISFORM.Refreshfrm
+	mP_err[2] =IIF(LEN(ALLT(THIS.DISPLAYVALUE))=0,'E0001','E0011')
+	DO errtrap
+	RETU 0
+ENDI
+WITH THISFORM
+	SELECT I
+	GO TOP
+	LOCATE FOR section_c =THIS.DISPLAYVALUE
+
+*	Check for Duplicate Key in case of Add
+	IF FOUND()
+		IF .Mode = 'a'
+			.Refreshfrm
+			mP_err[2] = 'E0015'
+			DO errtrap
+			RETU 0
+		ELSE
+			IF USED ('getRvew')
+				DROP VIEW getRvew
+			ENDIF
+
+			STORE '' TO newvar
+			newvar=THIS.DISPLAYVALUE
+
+			CREATE SQL VIEW getRvew REMOTE ;
+				CONNECTION CONNECT1 SHARED ;
+				AS;
+				SELECT * FROM section_mst ;
+				WHERE section_c=?newvar
+
+			SET MULTILOCKS ON
+
+*	If rec deleted from Section delete from config_mst
+			IF .txtdMode.VALUE=defModeDelete
+				IF USED ('delRvew')
+					DROP VIEW delRvew
+				ENDIF
+
+				CREATE SQL VIEW delRvew REMOTE ;
+					CONNECTION CONNECT1 SHARED ;
+					AS;
+					SELECT * FROM config_mst ;
+					WHERE section_c=?newvar
+
+				=DBSETPROP ('delRvew','VIEW','TABLE','config_Mst')
+				=DBSETPROP('delRvew','View','SendUpdates',.T.)
+				=DBSETPROP('delRvew.Section_c','Field','Updatable',.T.)
+
+				SELECT 28
+				USE delRvew
+				=CURSORSETPROP("Buffering",3,'delRvew')
+			ENDI
+
+			=DBSETPROP ('getRvew','VIEW','TABLE','Section_Mst')
+			=DBSETPROP('getRvew','View','SendUpdates',.T.)
+			=DBSETPROP('getRvew.Section_c','Field','Updatable',.T.)
+
+			SELECT 23
+			USE getRvew
+			=CURSORSETPROP("Buffering",3,'getRvew')
+
+			.txtSection_nm.VALUE = section_nm
+			.txtPrefix.VALUE = prefix
+			.txtSection_Add1.VALUE =section_add1
+			.txtSection_Add2.VALUE = section_add2
+			.txtSection_Add3.VALUE = section_add3
+			.txtPlant_code.VALUE =plant_code
+			.txtMat_rec_lt.VALUE =mat_rec_lt
+			.txtMat_issue_lt.VALUE=mat_issue_lt
+			.txtMat_insp_lt.VALUE =mat_insp_lt
+			.txtCheck_num_max.VALUE=check_num_max
+			.chkDoh1.VALUE = INT(VAL(SUBSTR(day_week_holiday,1,1)))
+			.chkDoh2.VALUE = INT(VAL(SUBSTR(day_week_holiday,2,1)))
+			.chkDoh3.VALUE = INT(VAL(SUBSTR(day_week_holiday,3,1)))
+			.chkDoh4.VALUE = INT(VAL(SUBSTR(day_week_holiday,4,1)))
+			.chkDoh5.VALUE = INT(VAL(SUBSTR(day_week_holiday,5,1)))
+			.chkDoh6.VALUE = INT(VAL(SUBSTR(day_week_holiday,6,1)))
+			.chkDoh7.VALUE = INT(VAL(SUBSTR(day_week_holiday,7,1)))
+
+		ENDI
+	ELSE
+		IF .Mode<>'a'
+			STORE '' TO mP_Oldcodesect
+			.Refreshfrm
+			mP_err[2] = 'E0102'
+			DO errtrap
+			RETU 0
+		ELSE
+			.txtCheck_num_max.VALUE = mP_Check_num_max
+		ENDIF
+	ENDIF
+ENDWITH
+
+ENDPROC
+PROCEDURE LostFocus
+*	Refreshing Statusbartext
+*THIS.STATUSBARTEXT =" "
+
+ENDPROC
+PROCEDURE When
+*	Retaining the Current Value
+mP_Oldcodesect =THIS.DISPLAYVALUE
+
+THIS.STATUSBARTEXT=defStb0006+defStb0027
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RM311GKPU
+[CLASS] line
+[BASECLASS] line
+[OBJNAME] Line2
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+Height = 0
+Left = 25
+Top = 288
+Width = 696
+BorderColor = 0,0,0
+Name = "Line2"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RM50M8X3S
+[CLASS] line
+[BASECLASS] line
+[OBJNAME] Line1
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+Height = 0
+Left = 24
+Top = 24
+Width = 697
+Name = "Line1"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RF012OCMQ
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtSection_Add1
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+Enabled = .F.
+Format = "!"
+Height = 48
+InputMask = ""
+Left = 529
+MaxLength = 60
+TabIndex = 8
+Top = 49
+Visible = .T.
+Width = 192
+SelectedForeColor = 255,255,255
+DisabledForeColor = 0,0,0
+SelectedBackColor = 0,0,128
+NullDisplay = "    "
+Name = "txtSection_Add1"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE LostFocus
+*THIS.STATUSBARTEXT =" "
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT=defStb0023+defStb0027
+ENDPROC
+PROCEDURE Valid
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RNV0SHPGQ
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtSection_Add2
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+Enabled = .F.
+Format = "!"
+Height = 48
+InputMask = ""
+Left = 529
+MaxLength = 60
+TabIndex = 9
+Top = 97
+Visible = .T.
+Width = 192
+DisabledForeColor = 0,0,0
+SelectedBackColor = 0,0,128
+NullDisplay = "    "
+Name = "txtSection_Add2"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE LostFocus
+*THIS.STATUSBARTEXT =" "
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT=defStb0023+defStb0027
+
+ENDPROC
+PROCEDURE Valid
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RNV0SHPH6
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtSection_Add3
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+Enabled = .F.
+Format = "!"
+Height = 48
+InputMask = ""
+Left = 529
+MaxLength = 60
+TabIndex = 10
+Top = 145
+Visible = .T.
+Width = 192
+DisabledForeColor = 0,0,0
+SelectedBackColor = 0,0,128
+NullDisplay = "    "
+Name = "txtSection_Add3"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE LostFocus
+*	Refreshing Statusbartext
+* THIS.STATUSBARTEXT =" "
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT=	defStb0023+defStb0027
+
+
+ENDPROC
+PROCEDURE Valid
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RR70ZCER4
+[CLASS] commandbutton
+[BASECLASS] commandbutton
+[OBJNAME] Command1
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+AutoSize = .F.
+Top = 1
+Left = 723
+Height = 24
+Width = 20
+FontSize = 10
+Picture = help.bmp
+Caption = ""
+TabIndex = 23
+TabStop = .F.
+ToolTipText = "Help"
+Name = "Command1"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Click
+HELP
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RNW11HPM3
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtPrefix
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+Hours = 0
+Enabled = .F.
+Format = "!"
+Height = 24
+InputMask = "X"
+Left = 169
+TabIndex = 3
+Top = 121
+Visible = .T.
+Width = 48
+SelectedForeColor = 255,255,255
+DisabledForeColor = 0,0,0
+SelectedBackColor = 0,0,128
+NullDisplay = "  "
+Name = "txtPrefix"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Valid
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT=defStb0019+defStb0027
+ENDPROC
+PROCEDURE LostFocus
+* THIS.STATUSBARTEXT =" "
+
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _04A0RL4NQ
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtSection_nm
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+Enabled = .F.
+Format = "!"
+Height = 48
+InputMask = ""
+Left = 169
+MaxLength = 60
+TabIndex = 2
+Top = 73
+Visible = .T.
+Width = 192
+SelectedForeColor = 255,255,255
+DisabledForeColor = 0,0,0
+SelectedBackColor = 0,0,128
+Name = "txtSection_nm"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Valid
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT=defStb0018+defStb0027
+ENDPROC
+PROCEDURE LostFocus
+* THIS.STATUSBARTEXT =" "
+
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RNW11HPM3
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label1
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Section Code        "
+Height = 16
+Left = 25
+Top = 60
+Width = 142
+TabIndex = 24
+Name = "Label1"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RNW11HPM3
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label3
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Name       "
+Height = 14
+Left = 25
+Top = 84
+Width = 142
+TabIndex = 25
+Name = "Label3"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RF012JCGV
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label4
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Short Code           "
+Height = 14
+Left = 25
+Top = 132
+Width = 142
+TabIndex = 26
+Name = "Label4"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RNW11HPM3
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label8
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Address One    "
+Height = 14
+Left = 385
+Top = 60
+Width = 142
+TabIndex = 27
+Name = "Label8"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _RNW11HPM3
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label9
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Address Two "
+Height = 14
+Left = 385
+Top = 108
+Width = 142
+TabIndex = 28
+Name = "Label9"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _0JF0KHGXQ
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label10
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Address Three"
+Height = 14
+Left = 385
+Top = 156
+Width = 142
+TabIndex = 29
+Name = "Label10"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _0OW0YMLXW
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtPlant_code
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+Hours = 0
+Enabled = .F.
+Format = "!"
+Height = 24
+InputMask = "XXX"
+Left = 169
+TabIndex = 4
+Top = 145
+Visible = .T.
+Width = 48
+SelectedForeColor = 255,255,255
+DisabledForeColor = 0,0,0
+SelectedBackColor = 0,0,128
+NullDisplay = "  "
+Name = "txtPlant_code"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE LostFocus
+*THIS.STATUSBARTEXT =" "
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT=defStb0460+defStb0027
+ENDPROC
+PROCEDURE Valid
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _0OW0YMLXX
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label5
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Plant Code"
+Height = 14
+Left = 25
+Top = 157
+Width = 142
+TabIndex = 31
+Name = "Label5"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9R3
+[CLASS] shape
+[BASECLASS] shape
+[OBJNAME] Shape1
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+Top = 241
+Left = 169
+Height = 24
+Width = 553
+BackStyle = 0
+Enabled = .T.
+SpecialEffect = 0
+Name = "Shape1"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9RY
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label6
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+AutoSize = .F.
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Material Receive L/T"
+Height = 16
+Left = 25
+Top = 180
+Width = 142
+TabIndex = 35
+ForeColor = 0,0,0
+BackColor = 192,192,192
+Name = "Label6"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9ST
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label7
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+AutoSize = .F.
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Material Issue L/T"
+Height = 16
+Left = 25
+Top = 204
+Width = 142
+TabIndex = 34
+ForeColor = 0,0,0
+BackColor = 192,192,192
+Name = "Label7"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9T9
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label11
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+AutoSize = .F.
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Material Inspection L/T"
+Height = 16
+Left = 25
+Top = 228
+Width = 142
+TabIndex = 33
+ForeColor = 0,0,0
+BackColor = 192,192,192
+Name = "Label11"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9TP
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtmat_insp_lt
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+Alignment = 3
+Value = 0
+Enabled = .F.
+Format = ""
+Height = 24
+InputMask = "999"
+Left = 169
+SelectOnEntry = .T.
+StatusBarText = ""
+TabIndex = 7
+Top = 217
+Width = 72
+DisabledForeColor = 0,0,0
+Name = "txtmat_insp_lt"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Valid
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT = defStb0490+defStb0027
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9UK
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtmat_rec_lt
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+Alignment = 3
+Value = 0
+Enabled = .F.
+Format = ""
+Height = 24
+InputMask = "999"
+Left = 169
+SelectOnEntry = .T.
+StatusBarText = ""
+TabIndex = 5
+Top = 169
+Width = 72
+DisabledForeColor = 0,0,0
+Name = "txtmat_rec_lt"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE When
+THIS.STATUSBARTEXT = defStb0489+defStb0027
+ENDPROC
+PROCEDURE Valid
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+
+
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9UL
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label12
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+AutoSize = .F.
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "MPS Backup Term"
+Height = 16
+Left = 385
+Top = 204
+Width = 142
+TabIndex = 32
+ForeColor = 0,0,0
+BackColor = 192,192,192
+Name = "Label12"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9UM
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtCheck_Num_Max
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+Alignment = 3
+Value = 0
+Enabled = .F.
+Format = ""
+Height = 24
+InputMask = "99"
+Left = 529
+StatusBarText = ""
+TabIndex = 11
+Top = 193
+Width = 72
+DisabledForeColor = 0,0,0
+Name = "txtCheck_Num_Max"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9V0
+[CLASS] textbox
+[BASECLASS] textbox
+[OBJNAME] txtmat_issue_lt
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+FontSize = 8
+Alignment = 3
+Value = 0
+Enabled = .F.
+Format = ""
+Height = 24
+InputMask = "999"
+Left = 169
+SelectOnEntry = .T.
+StatusBarText = ""
+TabIndex = 6
+Top = 193
+Width = 72
+DisabledForeColor = 0,0,0
+Name = "txtmat_issue_lt"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Valid
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT = defStb0132+defStb0027
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9V1
+[CLASS] label
+[BASECLASS] label
+[OBJNAME] Label13
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+AutoSize = .F.
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Day Of Holiday"
+Height = 16
+Left = 25
+Top = 252
+Width = 142
+TabIndex = 30
+ForeColor = 0,0,0
+Name = "Label13"
+[END PROPERTIES]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9VF
+[CLASS] checkbox
+[BASECLASS] checkbox
+[OBJNAME] chkDoh1
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+Top = 245
+Left = 187
+Height = 16
+Width = 60
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Sun"
+Enabled = .F.
+TabIndex = 12
+Name = "chkDoh1"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Click
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT =defStb0515 + defStb0027
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9VG
+[CLASS] checkbox
+[BASECLASS] checkbox
+[OBJNAME] chkDoh2
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+Top = 245
+Left = 266
+Height = 16
+Width = 60
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Mon"
+Enabled = .F.
+TabIndex = 13
+Name = "chkDoh2"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Click
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE Valid
+*	If ESCAPE Is Pressed , Revert		
+IF (LASTKEY()=27) OR (LASTKEY()=47)
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT =defStb0515 + defStb0027
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9VH
+[CLASS] checkbox
+[BASECLASS] checkbox
+[OBJNAME] chkDoh3
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+Top = 245
+Left = 352
+Height = 16
+Width = 60
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Tue"
+Enabled = .F.
+TabIndex = 14
+Name = "chkDoh3"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Click
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE Valid
+*	If ESCAPE Is Pressed , Revert		
+IF (LASTKEY()=27) OR (LASTKEY()=47)
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT =defStb0515 + defStb0027
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9VV
+[CLASS] checkbox
+[BASECLASS] checkbox
+[OBJNAME] chkDoh4
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+Top = 245
+Left = 425
+Height = 16
+Width = 60
+FontBold = .T.
+FontSize = 8
+Alignment = 0
+BackStyle = 0
+Caption = "Wed"
+Enabled = .F.
+TabIndex = 15
+Name = "chkDoh4"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Click
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE Valid
+*	If ESCAPE Is Pressed , Revert		
+IF (LASTKEY()=27) OR (LASTKEY()=47)
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT =defStb0515 + defStb0027
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9VW
+[CLASS] checkbox
+[BASECLASS] checkbox
+[OBJNAME] chkDoh5
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+Top = 245
+Left = 498
+Height = 16
+Width = 60
+FontBold = .T.
+FontSize = 8
+Alignment = 0
+BackStyle = 0
+Caption = "Thu"
+Enabled = .F.
+TabIndex = 16
+Name = "chkDoh5"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Click
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE Valid
+*	If ESCAPE Is Pressed , Revert		
+IF (LASTKEY()=27) OR (LASTKEY()=47)
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT =defStb0515 + defStb0027
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9VX
+[CLASS] checkbox
+[BASECLASS] checkbox
+[OBJNAME] chkDoh6
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+Top = 245
+Left = 579
+Height = 16
+Width = 60
+FontBold = .T.
+FontSize = 8
+BackStyle = 0
+Caption = "Fri"
+Enabled = .F.
+TabIndex = 17
+Name = "chkDoh6"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Click
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE Valid
+*	If ESCAPE Is Pressed , Revert		
+IF (LASTKEY()=27) OR (LASTKEY()=47)
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT =defStb0515 + defStb0027
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] WINDOWS 
+[UNIQUEID] _10A0NA9VY
+[CLASS] checkbox
+[BASECLASS] checkbox
+[OBJNAME] chkDoh7
+[PARENT] frmSection_Mst
+[START PROPERTIES]
+Top = 245
+Left = 649
+Height = 16
+Width = 59
+FontBold = .T.
+FontSize = 8
+Alignment = 0
+BackStyle = 0
+Caption = "Sat"
+Enabled = .F.
+TabIndex = 18
+Name = "chkDoh7"
+[END PROPERTIES]
+[START METHODS]
+PROCEDURE Click
+*	If Last key pressed was ESC OR ALT +R then don't do validations
+IF LASTKEY() = 27 .OR. LASTKEY() = 47
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE Valid
+*	If ESCAPE Is Pressed , Revert		
+IF (LASTKEY()=27) OR (LASTKEY()=47)
+	RETU
+ENDI
+
+ENDPROC
+PROCEDURE When
+THIS.STATUSBARTEXT =defStb0515 + defStb0027
+ENDPROC
+[END METHODS]
+
+[ RECORD]
+[PLATFORM] COMMENT 
+[UNIQUEID] RESERVED  
+[START PROPERTIES]
+Arial, 0, 9, 5, 15, 12, 32, 3, 0
+Arial, 0, 8, 5, 14, 11, 30, 3, 0
+Arial, 1, 8, 5, 14, 11, 29, 3, 0
+Arial, 0, 10, 6, 16, 13, 35, 3, 0
+[END PROPERTIES]
+[START RESERVED1]
+ 
+ language.h.ÂÛC2[END RESERVED1]
+[EOF]

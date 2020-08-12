@@ -1,0 +1,3 @@
+ENDWITH
+Error in line 83 of frmspoil_mat.Grid1.Column1.Combo1.Valid (record 8): Nesting error.
+Error in line 85 of frmspoil_mat.Grid1.Column1.Combo1.Valid (record 8): An IF | ELSE | ENDIF statement is missing.
